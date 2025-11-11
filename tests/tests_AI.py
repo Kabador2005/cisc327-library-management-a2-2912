@@ -9,7 +9,7 @@ current_dir = Path(__file__).parent
 parent_dir = current_dir.parent
 sys.path.insert(0, str(parent_dir))
 
-from library_service import (
+from services.library_service import (
     add_book_to_catalog,
     borrow_book_by_patron,
     return_book_by_patron,
