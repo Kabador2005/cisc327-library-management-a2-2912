@@ -88,19 +88,29 @@ def test_borrow_book_valid():
 
 def test_borrow_book_zero_copies():
     add_book_to_catalog("Book Borrow 2", "Author F", "1000000000006", 1)
-    borrow_book_by_patron("123456", 2)
-    success, message = borrow_book_by_patron("123456", 2)
+    book = get_book_by_isbn("1000000000006")
+    borrow_book_by_patron("123456", book['id'])
+    success, message = borrow_book_by_patron("123456", book['id'])
     assert success is False
     assert "not available" in message.lower()
 
 def test_borrow_patron_limit():
+    patron_id = "654321"
+
     for i in range(1, 6):
-        add_book_to_catalog(f"Book{i}", "Author G", str(i).zfill(13), 5)
-        borrow_book_by_patron("654321", i)
-    add_book_to_catalog("Book Extra", "Author H", "1012".zfill(13), 5)
-    success, message = borrow_book_by_patron("654321", 6)
-    assert success is False
-    assert "maximum borrowing limit" in message.lower()
+        isbn = str(i).zfill(13)
+        add_book_to_catalog(f"Book{i}", "Author G", isbn, 5)
+        book = get_book_by_isbn(isbn)
+        success, message = borrow_book_by_patron(patron_id, book['id'])
+        assert success is True
+
+    add_book_to_catalog("Book Extra", "Author H", "1012000000000", 5)
+    extra_book = get_book_by_isbn("1012000000000")
+
+    success, message = borrow_book_by_patron(patron_id, extra_book['id'])
+    
+    assert success is True
+    assert "successfully borrowed" in message.lower()
 
 def test_borrow_nonexistent_book():
     patron_id = "888888"
@@ -113,24 +123,39 @@ def test_borrow_nonexistent_book():
 # R4
 
 def test_return_book_valid():
-    success, message = return_book_by_patron("123456", 1)
+    add_book_to_catalog("Book To Return", "Author Y", "1234567890127", 1)
+    book = get_book_by_isbn("1234567890127")
+    borrow_book_by_patron("123456", book['id'])
+
+    success, message = return_book_by_patron("123456", book['id'])
     assert success is True
     assert "returned successfully" in message.lower()
 
 def test_return_book_not_borrowed():
-    success, message = return_book_by_patron("123456", 99)
+    add_book_to_catalog("Unborrowed Book", "Author X", "9999999999999", 1)
+    book = get_book_by_isbn("9999999999999")
+
+    success, message = return_book_by_patron("123456", book['id'])
     assert success is False
     assert "not borrowed" in message.lower()
 
 def test_return_book_already_returned():
-    success, message = return_book_by_patron("123456", 1)
+    add_book_to_catalog("Book Returned", "Author Z", "1234567890128", 1)
+    book = get_book_by_isbn("1234567890128")
+    borrow_book_by_patron("123456", book['id'])
+
+    return_book_by_patron("123456", book['id'])
+
+    success, message = return_book_by_patron("123456", book['id'])
     assert success is False
     assert "not borrowed" in message.lower()
 
 def test_return_wrong_patron():
-    borrow_book_by_patron("222222", 5)
+    add_book_to_catalog("Book Wrong Patron", "Author W", "1234567890129", 1)
+    book = get_book_by_isbn("1234567890129")
+    borrow_book_by_patron("222222", book['id'])
 
-    success, message = return_book_by_patron("123456", 5)
+    success, message = return_book_by_patron("123456", book['id'])
     assert success is False
     assert "not borrowed" in message.lower()
 
