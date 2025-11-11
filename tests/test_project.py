@@ -13,6 +13,22 @@ from services.library_service import (
 from database import (get_all_books, get_book_by_isbn, get_db_connection)
 from datetime import datetime, timedelta
 
+#Resetting the Database
+@pytest.fixture(autouse=True)
+def reset_db_before_test():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("DELETE FROM borrow_records")
+    cursor.execute("DELETE FROM books")
+
+    cursor.execute("DELETE FROM sqlite_sequence WHERE name='books'")
+    cursor.execute("DELETE FROM sqlite_sequence WHERE name='borrow_records'")
+
+    conn.commit()
+    conn.close()
+    yield
+
 # R1
 
 def test_add_book_valid_input():
